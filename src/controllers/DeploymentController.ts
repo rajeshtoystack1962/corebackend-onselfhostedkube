@@ -21,7 +21,9 @@ export const deployRepo = async (req: Request, res: Response) => {
         // 1. Determine App Name & Repo Name
         const gitName = gitUrl.split('/').pop()?.replace('.git', '') || 'unknown';
         const cleanBranch = branch.replace(/[^a-zA-Z0-9]/g, '-');
-        const appName = repoNameOverride || `${gitName}-${cleanBranch}`.toLowerCase().substring(0, 63); // K8s limit
+        const randomSuffix = Math.random().toString(36).substring(2, 8);
+        const baseName = repoNameOverride || `${gitName}-${cleanBranch}`.toLowerCase();
+        const appName = `${baseName}-${randomSuffix}`.substring(0, 63); // K8s limit
 
         // 2. Clone Repo
         const repoPath = await dockerService.cloneRepo(gitUrl, branch, appName);
