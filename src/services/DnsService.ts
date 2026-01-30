@@ -21,7 +21,7 @@ export class DnsService {
                 'A'
             );
         } catch (err: any) {
-            if (err.code === 'ResourceNotFound') {
+            if (err.code === 'ResourceNotFound' || err.code === 'NotFound') {
                 return null;
             }
             throw err;
