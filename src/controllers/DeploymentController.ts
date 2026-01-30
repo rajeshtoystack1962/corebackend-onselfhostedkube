@@ -54,14 +54,22 @@ export const deployRepo = async (req: Request, res: Response) => {
         // 6. Kubernetes Deployment
         // Pass env vars to K8s
         const envVars = env || {};
-        await k8sService.deployApp(appName, imageName, domainName, envVars);
+        const customDomain = envVars['MY_CUSTOM_DNS'];
 
-        res.json({
+        await k8sService.deployApp(appName, imageName, domainName, envVars, customDomain);
+
+        const response: any = {
             message: 'Deployment triggered successfully',
             appName,
-            domain: `http://${domainName}`, // Traefik usually handles http->https redirect, or start with http
+            domain: `https://${domainName}`, // Traefik usually handles http->https redirect
             image: imageName
-        });
+        };
+
+        if (customDomain) {
+            response.customDomain = `https://${customDomain}`;
+        }
+
+        res.json(response);
 
     } catch (error: any) {
         console.error('Deployment Failed:', error);

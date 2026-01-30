@@ -116,13 +116,14 @@ export class KubernetesService {
         }
     }
 
-    async createIngressRoute(appName: string, domainName: string) {
+    async createIngressRoute(appName: string, domainName: string, isCustom: boolean = false) {
         // Traefik IngressRoute Custom Resource
+        const routeName = isCustom ? `${appName}-custom` : appName;
         const ingressRoute = {
             apiVersion: 'traefik.io/v1alpha1',
             kind: 'IngressRoute',
             metadata: {
-                name: appName,
+                name: routeName,
                 namespace: appName
             },
             spec: {
@@ -150,23 +151,27 @@ export class KubernetesService {
                 plural: 'ingressroutes',
                 body: ingressRoute
             });
-            console.log(`IngressRoute ${appName} created.`);
+            console.log(`IngressRoute ${routeName} created.`);
         } catch (err: any) {
             if (err.body?.code === 409) {
                 // For CRD we might need get and update resourceVersion or just delete/create
                 // Simplification for POC: log it exists
-                console.log(`IngressRoute ${appName} already exists.`);
+                console.log(`IngressRoute ${routeName} already exists.`);
             } else {
                 throw err;
             }
         }
     }
 
-    async deployApp(appName: string, image: string, domainName: string, envVars: { [key: string]: string } = {}) {
+    async deployApp(appName: string, image: string, domainName: string, envVars: { [key: string]: string } = {}, customDomain?: string) {
         const k8sEnvVars = Object.entries(envVars).map(([name, value]) => ({ name, value }));
         await this.createNamespace(appName);
         await this.createDeployment(appName, image, k8sEnvVars);
         await this.createService(appName);
         await this.createIngressRoute(appName, domainName);
+
+        if (customDomain) {
+            await this.createIngressRoute(appName, customDomain, true);
+        }
     }
 }
